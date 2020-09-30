@@ -1,6 +1,7 @@
 import logging
 import os
 import glob
+import moxing as mox
 
 import cv2
 import numpy as np
@@ -76,6 +77,8 @@ def data_augmentation(LR_images, HR_images, aug_type='horizontal_flip'):
 
 def load_npz_data(FLAGS):
     """load array data from data_path"""
-    return np.load(FLAGS.data_url + '/' + FLAGS.HR_npz_filename)['images'], \
-           np.load(FLAGS.data_url + '/' + FLAGS.LR_npz_filename)['images']
-
+    print('obs path :', FLAGS.data_url)
+    mox.file.copy_parallel(FLAGS.data_url, FLAGS.native_data)
+    print("mox copy files finished")
+    return np.load(FLAGS.native_data + '/' + FLAGS.HR_npz_filename)['images'], \
+           np.load(FLAGS.native_data + '/' + FLAGS.LR_npz_filename)['images']

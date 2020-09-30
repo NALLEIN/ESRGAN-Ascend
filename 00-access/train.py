@@ -3,6 +3,7 @@ import gc
 import logging
 import math
 import os
+import moxing as mox
 
 import tensorflow as tf
 from sklearn.utils import shuffle
@@ -21,7 +22,10 @@ def set_flags():
     Flags.DEFINE_string('HR_npz_filename', 'HR_image.npz', 'the filename of HR image npz file')
     Flags.DEFINE_string('LR_npz_filename', 'LR_image.npz', 'the filename of LR image npz file')
     Flags.DEFINE_boolean('save_data', True, 'Whether to load and save data as npz file')
-    Flags.DEFINE_string('train_url', './train_result', 'output directory during training')
+    Flags.DEFINE_string('train_url', './tmp/train_result', 'output directory during training')
+    Flags.DEFINE_string('native_data', './tmp/data/npz', 'mox copy dst')
+    Flags.DEFINE_string('VGG19_weights',
+    './tmp/data/npz/pre_train_checkpoint/vgg19_weights_tf_dim_ordering_tf_kernels_notop.h5', 'weights url')
 
     # About Network
     Flags.DEFINE_integer('scale_SR', 4, 'the scale of super-resolution')
@@ -54,9 +58,9 @@ def set_flags():
     Flags.DEFINE_integer('train_sample_save_freq', 2000, 'save samples during training every n iteration')
     Flags.DEFINE_integer('train_ckpt_save_freq', 2000, 'save checkpoint during training every n iteration')
     Flags.DEFINE_integer('train_summary_save_freq', 200, 'save summary during training every n iteration')
-    Flags.DEFINE_string('pre_train_checkpoint_dir', './pre_train_checkpoint', 'pre-train checkpoint directory')
-    Flags.DEFINE_string('checkpoint_dir', './checkpoint', 'checkpoint directory')
-    Flags.DEFINE_string('logdir', './log', 'log directory')
+    Flags.DEFINE_string('pre_train_checkpoint_dir', '/pre_train_checkpoint', 'pre-train checkpoint directory')
+    Flags.DEFINE_string('checkpoint_dir', './tmp/checkpoint', 'checkpoint directory')
+    Flags.DEFINE_string('logdir', './tmp/log', 'log directory')
 
     # About GPU setting
     Flags.DEFINE_string('gpu_dev_num', '0', 'Which GPU to use for multi-GPUs.')
@@ -78,11 +82,12 @@ def set_logger(FLAGS):
 
 
 def main():
+    os.system('conda install h5py')
     # set flag
     FLAGS = set_flags()
 
     # make dirs
-    target_dirs = [FLAGS.train_url, FLAGS.pre_train_checkpoint_dir, FLAGS.checkpoint_dir, FLAGS.logdir]
+    target_dirs = [FLAGS.train_url, FLAGS.checkpoint_dir, FLAGS.logdir]
     create_dirs(target_dirs)
 
     # set logger
@@ -148,7 +153,7 @@ def main():
         writer = tf.summary.FileWriter(FLAGS.logdir, graph=sess.graph)
 
         pre_saver = tf.train.Saver(var_list=tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, scope='generator'))
-        pre_saver.restore(sess, tf.train.latest_checkpoint(FLAGS.pre_train_checkpoint_dir))
+        pre_saver.restore(sess, tf.train.latest_checkpoint(FLAGS.native_data+FLAGS.pre_train_checkpoint_dir))
 
         if FLAGS.perceptual_loss == 'VGG19':
             sess.run(load_vgg19_weight(FLAGS))
@@ -190,6 +195,7 @@ def main():
                     saver.save(sess, os.path.join(FLAGS.checkpoint_dir, 'gen'), global_step=current_iter)
 
         writer.close()
+        mox.file.copy_parallel(FLAGS.checkpoint_dir, FLAGS.data_url)
         log(logflag, 'Training ESRGAN end', 'info')
         log(logflag, 'Training script end', 'info')
 

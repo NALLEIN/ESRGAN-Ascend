@@ -1,15 +1,15 @@
 from collections import OrderedDict
 
 import tensorflow as tf
-from tensorflow.keras.applications.vgg19 import VGG19
 
+from tensorflow.keras.applications.vgg19 import VGG19
 
 def scale_initialization(weights, FLAGS):
     return [tf.assign(weight, weight * FLAGS.weight_initialize_scale) for weight in weights]
 
 
 def _transfer_vgg19_weight(FLAGS, weight_dict):
-    from_model = VGG19(include_top=False, weights='imagenet', input_tensor=None,
+    from_model = VGG19(include_top=False, weights=FLAGS.VGG19_weights, input_tensor=None,
                        input_shape=(FLAGS.HR_image_size, FLAGS.HR_image_size, FLAGS.channel))
 
     fetch_weight = []
