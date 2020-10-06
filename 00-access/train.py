@@ -13,6 +13,8 @@ from lib.pretrain_generator import train_pretrain_generator
 from lib.train_module import Network, Loss, Optimizer
 from lib.utils import create_dirs, log, normalize_images, save_image, load_npz_data
 
+from npu_bridge.estimator import npu_ops
+from tensorflow.core.protobuf.rewriter_config_pb2 import RewriterConfig
 
 def set_flags():
     Flags = tf.app.flags
@@ -82,7 +84,6 @@ def set_logger(FLAGS):
 
 
 def main():
-    os.system('conda install h5py')
     # set flag
     FLAGS = set_flags()
 
@@ -136,12 +137,11 @@ def main():
 
     gc.collect()
 
-    config = tf.ConfigProto(
-        gpu_options=tf.GPUOptions(
-            allow_growth=True,
-            visible_device_list=FLAGS.gpu_dev_num
-        )
-    )
+    config = tf.ConfigProto()
+    custom_op = config.graph_options.rewrite_options.custom_optimizers.add()
+    custom_op.name = "NpuOptimizer"
+    custom_op.parameter_map["use_off_line"].b = True
+    config.graph_options.rewrite_options.remapping = RewriterConfig.OFF
 
     # Start Session
     with tf.Session(config=config) as sess:
@@ -201,4 +201,5 @@ def main():
 
 
 if __name__ == '__main__':
+    # os.system('bash ./run_1p.sh')
     main()

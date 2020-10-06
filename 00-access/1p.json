@@ -1,0 +1,14 @@
+{
+    "group_count": "1",
+    "group_list": 
+    [   {
+            "group_name": "worker",
+            "device_count": "1",
+            "instance_count": "1",
+            "instance_list": [{"devices":[{"device_id":"0","device_ip":"192.168.100.101","rank_id":"1"}]}]
+        }
+    ],
+    "status": "completed"
+}
+
+    
